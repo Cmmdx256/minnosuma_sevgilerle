@@ -1,0 +1,936 @@
+<!doctype html>
+<html lang="tr" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terminal Aşk Protokolü</title>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&amp;family=Orbitron:wght@400;700;900&amp;family=Share+Tech+Mono&amp;display=swap" rel="stylesheet">
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      background: #000;
+      font-family: 'Share Tech Mono', 'Courier New', monospace;
+      color: #00ff41;
+      position: relative;
+    }
+
+    /* INTRO SCREEN */
+    #intro-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      transition: opacity 0.5s ease;
+    }
+    
+    #intro-screen.hide {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    .intro-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+    
+    .intro-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      animation: fadeInIntro 2s ease;
+    }
+    
+    @keyframes fadeInIntro {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .intro-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 48px;
+      font-weight: 900;
+      color: #ff1493;
+      text-shadow: 0 0 20px #ff1493, 0 0 40px #ff1493;
+      margin-bottom: 20px;
+      letter-spacing: 3px;
+      animation: glitchTitle 3s infinite;
+    }
+    
+    @keyframes glitchTitle {
+      0%, 90%, 100% {
+        transform: translateX(0);
+      }
+      92% {
+        transform: translateX(-5px);
+      }
+      94% {
+        transform: translateX(5px);
+      }
+    }
+    
+    .intro-subtitle {
+      font-family: 'VT323', monospace;
+      font-size: 20px;
+      color: #00ff41;
+      text-shadow: 0 0 10px #00ff41;
+      margin-bottom: 40px;
+      opacity: 0.8;
+      letter-spacing: 2px;
+    }
+    
+    .intro-hint {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 14px;
+      color: #64748b;
+      margin-top: 30px;
+      animation: bounce-hint 2s ease-in-out infinite;
+    }
+    
+    @keyframes bounce-hint {
+      0%, 100% {
+        transform: translateY(0);
+        opacity: 0.5;
+      }
+      50% {
+        transform: translateY(10px);
+        opacity: 1;
+      }
+    }
+
+    #start-button {
+      font-family: 'Orbitron', monospace;
+      font-size: 24px;
+      font-weight: 700;
+      padding: 25px 50px;
+      background: rgba(255, 20, 147, 0.15);
+      color: #ff1493;
+      border: 2px solid #ff1493;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 0 30px rgba(255, 20, 147, 0.5);
+      transition: all 0.3s ease;
+      animation: pulse 2s ease-in-out infinite;
+      position: relative;
+      overflow: hidden;
+      text-shadow: 0 0 10px rgba(255, 20, 147, 0.8);
+      letter-spacing: 2px;
+    }
+
+    #start-button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 50px rgba(255, 20, 147, 0.8);
+      background: rgba(255, 20, 147, 0.25);
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 30px rgba(255, 20, 147, 0.5);
+      }
+      50% {
+        transform: scale(1.03);
+        box-shadow: 0 0 50px rgba(255, 20, 147, 0.8);
+      }
+    }
+
+    /* LOADING SCREEN */
+    #loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+      flex-direction: column;
+    }
+    
+    #loading-screen.active {
+      display: flex;
+    }
+    
+    .loading-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 32px;
+      color: #ff1493;
+      text-shadow: 0 0 20px #ff1493;
+      margin-bottom: 40px;
+      animation: heartbeat 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes heartbeat {
+      0%, 100% {
+        transform: scale(1);
+      }
+      10%, 30% {
+        transform: scale(1.1);
+      }
+      20%, 40% {
+        transform: scale(1);
+      }
+    }
+    
+    .loading-bar-container {
+      width: 80%;
+      max-width: 600px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid #00ff41;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 0 20px rgba(0, 255, 65, 0.4);
+      position: relative;
+    }
+    
+    .loading-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #00ff41, #ff1493, #00ff41);
+      background-size: 200% 100%;
+      animation: gradientShift 2s linear infinite;
+      transition: width 0.1s linear;
+      box-shadow: 0 0 20px rgba(0, 255, 65, 0.8);
+    }
+    
+    @keyframes gradientShift {
+      0% {
+        background-position: 0% 0%;
+      }
+      100% {
+        background-position: 200% 0%;
+      }
+    }
+    
+    .loading-percent {
+      font-family: 'Orbitron', monospace;
+      font-size: 48px;
+      color: #00ff41;
+      text-shadow: 0 0 15px #00ff41;
+      margin-top: 30px;
+      font-weight: 700;
+    }
+    
+    .loading-text {
+      font-family: 'VT323', monospace;
+      font-size: 20px;
+      color: #64748b;
+      margin-top: 20px;
+      letter-spacing: 2px;
+    }
+
+    /* MAIN CONTENT */
+    #main-content {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+    
+    #main-content.active {
+      display: block;
+    }
+    
+    #main-content.show {
+      opacity: 1;
+    }
+    
+    .main-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+    
+    .content-wrapper {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      padding: 40px 20px 80px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-y: auto;
+    }
+
+    .terminal-container {
+      max-width: 1200px;
+      width: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 0;
+      box-shadow: 0 0 50px rgba(0, 255, 65, 0.4);
+      border: 2px solid rgba(0, 255, 65, 0.5);
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    
+    .terminal-header {
+      background: linear-gradient(180deg, rgba(20, 20, 20, 0.95) 0%, rgba(10, 10, 10, 0.95) 100%);
+      padding: 12px 20px;
+      border-bottom: 1px solid rgba(0, 255, 65, 0.4);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .terminal-controls {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .control-btn {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 1px solid rgba(0, 0, 0, 0.5);
+    }
+    
+    .control-btn.close { 
+      background: #ff5f56; 
+      box-shadow: 0 0 8px rgba(255, 95, 86, 0.6);
+    }
+    .control-btn.minimize { 
+      background: #ffbd2e; 
+      box-shadow: 0 0 8px rgba(255, 189, 46, 0.6);
+    }
+    .control-btn.maximize { 
+      background: #27c93f; 
+      box-shadow: 0 0 8px rgba(39, 201, 63, 0.6);
+    }
+    
+    .terminal-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 14px;
+      color: #00ff41;
+      margin-left: 15px;
+      letter-spacing: 1px;
+      text-shadow: 0 0 10px rgba(0, 255, 65, 0.8);
+      font-weight: 700;
+    }
+    
+    .terminal-content {
+      padding: 25px;
+      font-family: 'VT323', monospace;
+      position: relative;
+      max-height: 70%;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+      background: rgba(0, 0, 0, 0.8);
+      min-height: 400px;
+    }
+    
+    .terminal-content::-webkit-scrollbar {
+      width: 12px;
+    }
+    
+    .terminal-content::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 10px;
+    }
+    
+    .terminal-content::-webkit-scrollbar-thumb {
+      background: rgba(0, 255, 65, 0.6);
+      border-radius: 10px;
+      border: 2px solid rgba(0, 0, 0, 0.5);
+    }
+
+    .terminal-line {
+      margin-bottom: 8px;
+      font-size: 20px;
+      line-height: 1.6;
+      color: #00ff41;
+      text-shadow: 0 0 5px rgba(0, 255, 65, 0.5);
+      word-wrap: break-word;
+    }
+    
+    .terminal-prompt {
+      color: #ff1493;
+      text-shadow: 0 0 8px rgba(255, 20, 147, 0.8);
+      font-weight: bold;
+    }
+    
+    .terminal-output {
+      color: #64748b;
+      margin-left: 20px;
+    }
+    
+    .terminal-success {
+      color: #00ff41;
+      text-shadow: 0 0 8px rgba(0, 255, 65, 0.8);
+    }
+    
+    .terminal-error {
+      color: #ff1493;
+      text-shadow: 0 0 8px rgba(255, 20, 147, 0.8);
+    }
+    
+    .terminal-warning {
+      color: #f59e0b;
+      text-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
+    }
+    
+    .love-message {
+      color: #ff1493;
+      text-shadow: 0 0 10px rgba(255, 20, 147, 0.9);
+      font-weight: bold;
+      margin: 15px 0;
+      padding: 10px;
+      border-left: 3px solid #ff1493;
+      background: rgba(255, 20, 147, 0.05);
+      animation: loveGlow 2s ease-in-out infinite;
+    }
+    
+    @keyframes loveGlow {
+      0%, 100% {
+        text-shadow: 0 0 10px rgba(255, 20, 147, 0.9);
+      }
+      50% {
+        text-shadow: 0 0 20px rgba(255, 20, 147, 1);
+      }
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 10px;
+      height: 1.2em;
+      background: #00ff41;
+      margin-left: 5px;
+      animation: blink 0.7s infinite;
+      vertical-align: text-bottom;
+      box-shadow: 0 0 8px #00ff41;
+    }
+
+    @keyframes blink {
+      0%, 50% {
+        opacity: 1;
+      }
+      51%, 100% {
+        opacity: 0;
+      }
+    }
+    
+    .github-link {
+      position: fixed;
+      bottom: 15px;
+      right: 15px;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 20px;
+      background: rgba(0, 0, 0, 0.9);
+      border: 2px solid rgba(0, 255, 65, 0.6);
+      border-radius: 8px;
+      text-decoration: none;
+      font-family: 'Orbitron', monospace;
+      font-size: 14px;
+      color: #00ff41;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 20px rgba(0, 255, 65, 0.4);
+      backdrop-filter: blur(10px);
+    }
+    
+    .github-link:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 0 30px rgba(0, 255, 65, 0.7);
+      border-color: #00ff41;
+    }
+    
+    .github-icon {
+      width: 24px;
+      height: 24px;
+      fill: #00ff41;
+      filter: drop-shadow(0 0 5px rgba(0, 255, 65, 0.8));
+    }
+    
+    .github-text {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    
+    .github-label {
+      font-size: 10px;
+      color: #64748b;
+      letter-spacing: 1px;
+    }
+    
+    .github-username {
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-shadow: 0 0 8px rgba(0, 255, 65, 0.8);
+    }
+
+    @media (max-width: 768px) {
+      .intro-title {
+        font-size: 28px;
+        padding: 0 20px;
+      }
+      
+      .intro-subtitle {
+        font-size: 14px;
+        padding: 0 20px;
+      }
+      
+      #start-button {
+        font-size: 16px;
+        padding: 15px 30px;
+        margin: 0 20px;
+      }
+      
+      .loading-title {
+        font-size: 24px;
+      }
+      
+      .loading-percent {
+        font-size: 36px;
+      }
+      
+      .content-wrapper {
+        padding: 20px 10px 80px 10px;
+      }
+      
+      .terminal-line {
+        font-size: 16px;
+      }
+      
+      .github-link {
+        padding: 8px 12px;
+        font-size: 11px;
+      }
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="/_sdk/element_sdk.js" type="text/javascript"></script>
+  <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
+ </head>
+ <body><!-- INTRO SCREEN -->
+  <div id="intro-screen">
+   <canvas id="intro-canvas" class="intro-canvas"></canvas>
+   <div class="intro-content">
+    <h1 class="intro-title">💕 KALP SİSTEMİNE YETKİSİZ GİRİŞ 💕</h1>
+    <div class="intro-subtitle">
+     // LOVE_PROTOCOL_v2.0 BAŞLATILIYOR...
+    </div><button id="start-button">💘 Kalbe Yetkisiz Giriş Yap... 💘</button>
+    <div class="intro-hint">
+     ▼ Mesajı Görmek İçin Sisteme Gir ▼
+    </div>
+   </div>
+  </div><!-- LOADING SCREEN -->
+  <div id="loading-screen">
+   <div class="loading-title">
+    💓 KALP RİTMİ YÜKLENİYOR 💓
+   </div>
+   <div class="loading-bar-container">
+    <div class="loading-bar" id="loading-bar"></div>
+   </div>
+   <div class="loading-percent" id="loading-percent">
+    0%
+   </div>
+   <div class="loading-text" id="loading-text">
+    Sistem başlatılıyor...
+   </div>
+  </div><!-- MAIN CONTENT -->
+  <div id="main-content">
+   <canvas id="main-canvas" class="main-canvas"></canvas>
+   <div class="content-wrapper">
+    <div class="terminal-container">
+     <div class="terminal-header">
+      <div class="terminal-controls">
+       <div class="control-btn close"></div>
+       <div class="control-btn minimize"></div>
+       <div class="control-btn maximize"></div>
+      </div>
+      <div class="terminal-title">
+       ♥ LOVE_TERMINAL_v2.0 - ENCRYPTED CONNECTION ♥
+      </div>
+     </div>
+     <div class="terminal-content" id="terminal-content"></div>
+    </div>
+   </div><a href="https://github.com/Cmmdx256" target="_blank" rel="noopener noreferrer" class="github-link">
+    <svg class="github-icon" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+    </svg>
+    <div class="github-text"><span class="github-label">DEVELOPED BY</span> <span class="github-username">Cmmdx256</span>
+    </div></a>
+  </div>
+  <script>
+    // Kalp çarpışma animasyonu
+    class Heart {
+      constructor(canvas) {
+        this.canvas = canvas;
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 30 + 20;
+        this.speedX = (Math.random() - 0.5) * 2;
+        this.speedY = (Math.random() - 0.5) * 2;
+        this.color = ['#ff1493', '#00ff41', '#000000'][Math.floor(Math.random() * 3)];
+        this.opacity = Math.random() * 0.5 + 0.3;
+        this.exploding = false;
+        this.explosionProgress = 0;
+        this.pulsePhase = Math.random() * Math.PI * 2;
+      }
+
+      draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        
+        if (this.exploding) {
+          // Patlama efekti
+          const scale = 1 + (this.explosionProgress * 2);
+          ctx.scale(scale, scale);
+          ctx.globalAlpha = this.opacity * (1 - this.explosionProgress);
+          
+          // Parçacıklar
+          for (let i = 0; i < 8; i++) {
+            const angle = (Math.PI * 2 * i) / 8;
+            const dist = this.explosionProgress * 50;
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(
+              Math.cos(angle) * dist,
+              Math.sin(angle) * dist,
+              3,
+              0,
+              Math.PI * 2
+            );
+            ctx.fill();
+          }
+        } else {
+          const pulse = Math.sin(this.pulsePhase) * 0.1 + 1;
+          ctx.scale((this.size / 20) * pulse, (this.size / 20) * pulse);
+          ctx.globalAlpha = this.opacity;
+        }
+        
+        ctx.strokeStyle = this.color;
+        ctx.fillStyle = this.color;
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = this.color;
+
+        ctx.beginPath();
+        for (let i = 0; i <= 100; i++) {
+          const t = (i / 100) * Math.PI * 2;
+          const x = 16 * Math.pow(Math.sin(t), 3);
+          const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+          
+          if (i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+        ctx.stroke();
+        
+        ctx.restore();
+      }
+
+      update(canvas, hearts) {
+        if (this.exploding) {
+          this.explosionProgress += 0.05;
+          if (this.explosionProgress >= 1) {
+            return false; // Kalbi sil
+          }
+          return true;
+        }
+
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.pulsePhase += 0.03;
+
+        // Duvarlara çarpma
+        if (this.x <= this.size || this.x >= canvas.width - this.size) {
+          this.speedX *= -1;
+          this.x = Math.max(this.size, Math.min(canvas.width - this.size, this.x));
+        }
+        if (this.y <= this.size || this.y >= canvas.height - this.size) {
+          this.speedY *= -1;
+          this.y = Math.max(this.size, Math.min(canvas.height - this.size, this.y));
+        }
+
+        // Diğer kalplere çarpma kontrolü
+        for (let other of hearts) {
+          if (other === this || other.exploding) continue;
+          
+          const dx = this.x - other.x;
+          const dy = this.y - other.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          const minDist = this.size + other.size;
+
+          if (distance < minDist) {
+            // Çarpışma - ikisi de patlasın!
+            this.exploding = true;
+            other.exploding = true;
+            this.explosionProgress = 0;
+            other.explosionProgress = 0;
+          }
+        }
+
+        return true;
+      }
+    }
+
+    function createHeartAnimation(canvasId) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return null;
+      
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const hearts = [];
+      let animationId;
+
+      function animate() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Yeni kalp ekle
+        if (Math.random() < 0.03 && hearts.length < 20) {
+          hearts.push(new Heart(canvas));
+        }
+
+        // Kalpleri güncelle ve çiz
+        for (let i = hearts.length - 1; i >= 0; i--) {
+          const alive = hearts[i].update(canvas, hearts);
+          if (alive) {
+            hearts[i].draw(ctx);
+          } else {
+            hearts.splice(i, 1);
+          }
+        }
+
+        animationId = requestAnimationFrame(animate);
+      }
+
+      animate();
+
+      window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      });
+
+      return { stop: () => cancelAnimationFrame(animationId) };
+    }
+
+    // Terminal mesajları
+    const terminalSequence = [
+      { type: 'command', text: 'root@love-system:~# init_connection --target=KALBİM', delay: 100 },
+      { type: 'output', text: '[OK] Bağlantı kuruldu: KALP SİSTEMİ v2.0', delay: 800 },
+      { type: 'command', text: 'root@love-system:~# load_emotions --level=MAX', delay: 100 },
+      { type: 'output', text: '[YÜKLENIYOR...] Duygular sisteme aktarılıyor...', delay: 1000 },
+      { type: 'love', text: '💕 Seni düşündüğüm her an, sistemim çöküyor... 💕', delay: 1500 },
+      { type: 'command', text: 'root@love-system:~# cat /heart/feelings/sorry.txt', delay: 100 },
+      { type: 'output', text: '[DOSYA OKUNUYOR...]', delay: 600 },
+      { type: 'text', text: 'Canımın İçi, Tek Sığınağım...', delay: 1200 },
+      { type: 'text', text: 'Bu satırları sadece elimle değil, tüm kalbimle yazıyorum.', delay: 80 },
+      { type: 'text', text: 'Aramızdaki sessizliğin ağırlığı, göğsümün tam ortasında duruyor.', delay: 80 },
+      { type: 'love', text: '❤️ Seni kırdığım için kendimi asla affetmeyeceğim... ❤️', delay: 1500 },
+      { type: 'command', text: 'root@love-system:~# ./apologize.sh --sincere=true', delay: 100 },
+      { type: 'output', text: '[ÇALIŞIYOR...] Özür protokolü başlatılıyor...', delay: 1000 },
+      { type: 'text', text: 'Biliyorsun, insan bazen en çok değer verdiğini incitirmiş...', delay: 80 },
+      { type: 'text', text: 'Kalbimde sana karşı tek bir zerre bile kötü niyet yoktu.', delay: 80 },
+      { type: 'warning', text: '⚠️ UYARI: Benim dünyam senin etrafında dönüyor!', delay: 1200 },
+      { type: 'love', text: '💖 Sensizlik = Sistem Hatası 💖', delay: 1500 },
+      { type: 'command', text: 'root@love-system:~# check_status --without=SEN', delay: 100 },
+      { type: 'error', text: '[HATA] Sistem eksik parametreyle çalışamıyor!', delay: 1000 },
+      { type: 'text', text: 'Sen benim sadece sevgilim değil; arkadaşım, sırdaşım, evim ve huzurumsun.', delay: 80 },
+      { type: 'text', text: 'Sensiz geçen her saat, sanki hayatın renkleri solmuş gibi...', delay: 80 },
+      { type: 'love', text: '✨ Haklı olmak istemiyorum, sadece seninle olmak istiyorum ✨', delay: 1500 },
+      { type: 'command', text: 'root@love-system:~# request_forgiveness.exe', delay: 100 },
+      { type: 'output', text: '[BAŞLATILIYOR...] Af talebi gönderiliyor...', delay: 1000 },
+      { type: 'text', text: 'Hatalı olduğumu kabul ediyorum, bu yükü omuzlarımda taşıyorum.', delay: 80 },
+      { type: 'text', text: 'Ama lütfen bana o şansı ver. Seni tekrar güldürebilmek için...', delay: 80 },
+      { type: 'warning', text: '⚡ SÖYLÜYORUM: Seni bir daha asla incitmeyeceğim!', delay: 1200 },
+      { type: 'love', text: '💝 Bizim hikayemiz böyle yarım kalmamalı 💝', delay: 1500 },
+      { type: 'command', text: 'root@love-system:~# echo $LOVE_LEVEL', delay: 100 },
+      { type: 'success', text: '∞ (SONSUZ)', delay: 1000 },
+      { type: 'text', text: 'Lütfen sevgilim; o koca yüreğine sığınmama izin ver.', delay: 80 },
+      { type: 'text', text: 'Seni, kelimelerin bittiği yere kadar, nefesim yettiği sürece çok seviyorum.', delay: 80 },
+      { type: 'love', text: '💕💕💕 SONSUZ SEVGĠYLE 💕💕💕', delay: 1500 },
+      { type: 'command', text: 'root@love-system:~# final_message.sh', delay: 100 },
+      { type: 'output', text: '[SON MESAJ]', delay: 800 },
+      { type: 'success', text: '>> Beni bağışla, bizi yeniden başlat... <<', delay: 1500 },
+      { type: 'success', text: '[MESAJ BAŞARIYLA İLETİLDİ]', delay: 1000 },
+      { type: 'output', text: 'Bağlantı açık kalacak... Sonsuza kadar seninleyim. ♥', delay: 0 }
+    ];
+
+    let terminalIndex = 0;
+
+    function typeTerminal() {
+      if (terminalIndex >= terminalSequence.length) return;
+
+      const line = terminalSequence[terminalIndex];
+      const terminalContent = document.getElementById('terminal-content');
+      const lineDiv = document.createElement('div');
+      
+      if (line.type === 'command') {
+        lineDiv.className = 'terminal-line';
+        lineDiv.innerHTML = `<span class="terminal-prompt">${line.text}</span>`;
+        terminalContent.appendChild(lineDiv);
+        terminalContent.scrollTop = terminalContent.scrollHeight;
+        terminalIndex++;
+        setTimeout(typeTerminal, line.delay);
+      } else if (line.type === 'output') {
+        lineDiv.className = 'terminal-line terminal-output';
+        lineDiv.textContent = line.text;
+        terminalContent.appendChild(lineDiv);
+        terminalContent.scrollTop = terminalContent.scrollHeight;
+        terminalIndex++;
+        setTimeout(typeTerminal, line.delay);
+      } else if (line.type === 'success') {
+        lineDiv.className = 'terminal-line terminal-success';
+        lineDiv.textContent = line.text;
+        terminalContent.appendChild(lineDiv);
+        terminalContent.scrollTop = terminalContent.scrollHeight;
+        terminalIndex++;
+        setTimeout(typeTerminal, line.delay);
+      } else if (line.type === 'error') {
+        lineDiv.className = 'terminal-line terminal-error';
+        lineDiv.textContent = line.text;
+        terminalContent.appendChild(lineDiv);
+        terminalContent.scrollTop = terminalContent.scrollHeight;
+        terminalIndex++;
+        setTimeout(typeTerminal, line.delay);
+      } else if (line.type === 'warning') {
+        lineDiv.className = 'terminal-line terminal-warning';
+        lineDiv.textContent = line.text;
+        terminalContent.appendChild(lineDiv);
+        terminalContent.scrollTop = terminalContent.scrollHeight;
+        terminalIndex++;
+        setTimeout(typeTerminal, line.delay);
+      } else if (line.type === 'love') {
+        lineDiv.className = 'terminal-line love-message';
+        lineDiv.textContent = line.text;
+        terminalContent.appendChild(lineDiv);
+        terminalContent.scrollTop = terminalContent.scrollHeight;
+        terminalIndex++;
+        setTimeout(typeTerminal, line.delay);
+      } else {
+        lineDiv.className = 'terminal-line';
+        terminalContent.appendChild(lineDiv);
+        
+        let charIndex = 0;
+        function typeChar() {
+          if (charIndex < line.text.length) {
+            lineDiv.textContent = line.text.substring(0, charIndex + 1);
+            lineDiv.innerHTML += '<span class="cursor"></span>';
+            charIndex++;
+            terminalContent.scrollTop = terminalContent.scrollHeight;
+            setTimeout(typeChar, 50);
+          } else {
+            lineDiv.innerHTML = lineDiv.textContent.replace('<span class="cursor"></span>', '');
+            terminalIndex++;
+            setTimeout(typeTerminal, line.delay);
+          }
+        }
+        typeChar();
+      }
+    }
+
+    // Ana kontrol
+    let introAnimation = createHeartAnimation('intro-canvas');
+
+    document.getElementById('start-button').addEventListener('click', function() {
+      // Intro'yu gizle
+      document.getElementById('intro-screen').classList.add('hide');
+      
+      setTimeout(() => {
+        document.getElementById('intro-screen').style.display = 'none';
+        if (introAnimation) introAnimation.stop();
+        
+        // Loading ekranını göster
+        const loadingScreen = document.getElementById('loading-screen');
+        loadingScreen.classList.add('active');
+        
+        const loadingBar = document.getElementById('loading-bar');
+        const loadingPercent = document.getElementById('loading-percent');
+        const loadingText = document.getElementById('loading-text');
+        
+        let percent = 0;
+        const loadingTexts = [
+          'Sistem başlatılıyor...',
+          'Kalp ritmi senkronize ediliyor...',
+          'Duygusal bağlantı kuruluyor...',
+          'Sevgi protokolü yükleniyor...',
+          'Terminal başlatılıyor...'
+        ];
+        
+        const interval = setInterval(() => {
+          percent += 1;
+          loadingBar.style.width = percent + '%';
+          loadingPercent.textContent = percent + '%';
+          
+          if (percent % 20 === 0 && percent < 100) {
+            loadingText.textContent = loadingTexts[Math.floor(percent / 20)];
+          }
+          
+          if (percent >= 100) {
+            clearInterval(interval);
+            loadingText.textContent = 'Sistem hazır! 💚';
+            
+            setTimeout(() => {
+              loadingScreen.classList.remove('active');
+              
+              // Ana içeriği göster
+              const mainContent = document.getElementById('main-content');
+              mainContent.classList.add('active');
+              
+              setTimeout(() => {
+                mainContent.classList.add('show');
+                createHeartAnimation('main-canvas');
+                
+                setTimeout(() => {
+                  typeTerminal();
+                }, 500);
+              }, 100);
+            }, 1000);
+          }
+        }, 30);
+      }, 500);
+    });
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9bab2dbbe3a0d5ef',t:'MTc2Nzg2OTg5NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
